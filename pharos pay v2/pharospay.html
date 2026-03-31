@@ -268,6 +268,26 @@
   #toast.show{transform:translateY(0);opacity:1}
   #toast .ti{font-size:16px}
 
+  /* ── TX NOTIFICATION (top-right, below profile) ── */
+  #tx-notif-stack{position:fixed;top:68px;right:18px;z-index:800;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:300px}
+  .tx-notif{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 28px rgba(14,165,233,.14);pointer-events:all;transform:translateX(340px);opacity:0;transition:transform .38s cubic-bezier(.34,1.46,.64,1),opacity .3s ease;position:relative;overflow:hidden}
+  .tx-notif.show{transform:translateX(0);opacity:1}
+  .tx-notif.hide{transform:translateX(340px);opacity:0}
+  .tx-notif::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:12px 0 0 12px}
+  .tx-notif.success::before{background:var(--green)}
+  .tx-notif.warning::before{background:var(--amber)}
+  .tx-notif.error::before{background:var(--red)}
+  .tx-notif.info::before{background:var(--cyan2)}
+  .tx-notif-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+  .tx-notif-body{flex:1;min-width:0}
+  .tx-notif-title{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:2px}
+  .tx-notif-sub{font-family:'Space Mono',monospace;font-size:.66rem;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx-notif-hash{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--cyan);cursor:pointer;text-decoration:underline dotted;margin-top:3px;display:block}
+  .tx-notif-close{font-size:13px;color:var(--text3);cursor:pointer;flex-shrink:0;padding:2px 4px;border-radius:4px;line-height:1;transition:background .15s}
+  .tx-notif-close:hover{background:var(--bg3);color:var(--text)}
+  .tx-notif-bar{position:absolute;bottom:0;left:0;height:2px;background:var(--cyan2);border-radius:0 0 0 12px;animation:tx-bar 5s linear forwards}
+  @keyframes tx-bar{from{width:100%}to{width:0%}}
+
   .landing-wrap{text-align:center;padding:90px 20px}
   .landing-wrap h1{font-size:2.3rem;font-weight:800;background:linear-gradient(135deg,#fff 0%,var(--cyan) 50%,var(--purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
   .landing-wrap p{color:var(--text3);font-size:.96rem;max-width:450px;margin:0 auto 28px}
@@ -759,6 +779,7 @@
   </main>
 </div>
 <div id="toast"><span class="ti">✅</span><span id="toast-msg">Done!</span></div>
+<div id="tx-notif-stack"></div>
 
 <script>
 /* ═══════════════════════════ STATE ═══════════════════════════ */
@@ -858,28 +879,47 @@ function addNFTRecord(nft) {
   saveNFTHistory(arr);
 }
 
-/* ═══════════════════════════ TX DATA ════════════════════════ */
-const eTxD = [
+/* ═══════════════════════════ TX DATA (persisted) ════════════ */
+const SEED_eTxD = [
   {id:'et1',type:'out',icon:'📤',label:'Sent to 0x9a1b...3c4d',meta:'Mar 30 · 14:22 · USDC',amount:'-500 USDC',hash:'0xa1b2c3d4e5'},
   {id:'et2',type:'in', icon:'📥',label:'Received from 0x5e6f...7g8h',meta:'Mar 29 · 10:05 · USDC',amount:'+1,200 USDC',hash:'0xf7a8b9c0d1'},
   {id:'et3',type:'out',icon:'📤',label:'Sent to 0x1234...abcd',meta:'Mar 28 · 09:30 · USDC',amount:'-300 USDC',hash:'0xe2f3a4b5c6'},
   {id:'et4',type:'in', icon:'📥',label:'Received from Faucet',meta:'Mar 26 · 20:14 · PHRS',amount:'+5,000 PHRS',hash:'0xd7e8f9a0b1'},
 ];
-const ePayD = [
+const SEED_ePayD = [
   {id:'ep1',type:'pay',icon:'💸',label:'Salary → 0x742d...4567',meta:'Mar 30 · 14:22 · March 2026',amount:'-$4,200 USDC',hash:'0xa1c3e5g7'},
   {id:'ep2',type:'pay',icon:'💸',label:'Salary → 0xabc1...8910',meta:'Mar 29 · 09:11 · March 2026',amount:'-$2,800 USDC',hash:'0xb2d4f6h8'},
   {id:'ep3',type:'pay',icon:'💸',label:'Salary → 0xdef2...1122',meta:'Mar 28 · 17:44 · Feb 2026',amount:'-$1,500 USDC',hash:'0xc3e5g7i9'},
 ];
-const uTxD = [
+const SEED_uTxD = [
   {id:'ut1',type:'out',icon:'📤',label:'Sent to 0xfriend...1234',meta:'Mar 30 · 11:45 · USDC',amount:'-100 USDC',hash:'0xe5g7i9k1'},
   {id:'ut2',type:'in', icon:'📥',label:'Salary from 0xpartner...5678',meta:'Mar 28 · 16:22 · USDC',amount:'+$4,200 USDC',hash:'0xf6h8j0l2'},
   {id:'ut3',type:'out',icon:'📤',label:'Sent to 0xstore...9012',meta:'Mar 27 · 08:10 · USDC',amount:'-50 USDC',hash:'0xg7i9k1m3'},
 ];
-const uColD = [
+const SEED_uColD = [
   {id:'uc1',type:'nft',icon:'🎁',label:'Salary collected · Acme Corp',meta:'Mar 30 · 14:22 · NFT #1043 Minted & Sent',amount:'+$4,200 USDC',hash:'0xh8j0l2n4'},
   {id:'uc2',type:'nft',icon:'🎁',label:'Salary collected · TechCo Inc',meta:'Feb 28 · 10:05 · NFT #1031 Minted',amount:'+$2,000 USDC',hash:'0xi9k1m3o5'},
   {id:'uc3',type:'nft',icon:'🎁',label:'Salary collected · StartupXYZ',meta:'Jan 31 · 09:50 · NFT #1019 Sent',amount:'+$1,500 USDC',hash:'0xj0l2n4p6'},
 ];
+
+function txKey(type){ return 'pharos_tx_'+type+'_'+(S.wallet||'anon').toLowerCase(); }
+function loadTx(type,seed){ try{const r=localStorage.getItem(txKey(type));return r?JSON.parse(r):[...seed];}catch{return [...seed];} }
+function saveTx(type,arr){ try{localStorage.setItem(txKey(type),JSON.stringify(arr.slice(0,200)));}catch{} }
+function pushTx(type,item){
+  const arr=loadTx(type,[]);
+  arr.unshift(item);
+  saveTx(type,arr);
+  return arr;
+}
+
+// Runtime arrays — loaded fresh on connect
+let eTxD=[], ePayD=[], uTxD=[], uColD=[];
+function loadAllTx(){
+  eTxD  = loadTx('etx',  SEED_eTxD);
+  ePayD = loadTx('epay', SEED_ePayD);
+  uTxD  = loadTx('utx',  SEED_uTxD);
+  uColD = loadTx('ucol', SEED_uColD);
+}
 
 // Seed NFT history for demo
 const SEED_NFTS = [
@@ -1043,36 +1083,52 @@ function renderBalances() {
   ['emp-balances','usr-balances'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
 }
 
+/* ── USDC contract addresses per chain ── */
+const USDC_CONTRACTS = {
+  688689: '0x72dCEF4C9E4B0E1160Dab8D3D4Aa49cB2b57C95', // Pharos Atlantic (update if different)
+  688688: '0x72dCEF4C9E4B0E1160Dab8D3D4Aa49cB2b57C95', // Pharos Testnet
+  1:      '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // Ethereum
+  8453:   '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base
+};
+
+async function fetchUSDCBalance(wallet, chainId, rpc) {
+  const ca = USDC_CONTRACTS[chainId]; if(!ca) return null;
+  // ERC-20 balanceOf(address) selector = 0x70a08231, pad address to 32 bytes
+  const data = '0x70a08231' + wallet.toLowerCase().replace('0x','').padStart(64,'0');
+  try {
+    const result = await window.ethereum.request({
+      method:'eth_call',
+      params:[{to:ca, data}, 'latest']
+    });
+    if(!result || result==='0x') return '0.00 USDC';
+    const raw = BigInt(result);
+    const val = Number(raw) / 1e6; // USDC has 6 decimals
+    return val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' USDC';
+  } catch(e){ return null; }
+}
+
 async function fetchBalance() {
   if(!S.connected || !S.wallet || !window.ethereum) return;
   const net = NETS[S.net] || NETS['pharos-atlantic'];
   try {
-    // Check actual connected chain vs selected network
     const currentChainHex = await window.ethereum.request({method:'eth_chainId'});
     const currentChain = parseInt(currentChainHex,16);
     const expectedChain = net.numericId;
-    // Fetch native balance from actual connected chain
     const hex = await window.ethereum.request({method:'eth_getBalance',params:[S.wallet,'latest']});
     const native = parseInt(hex,16)/1e18;
+
     if(expectedChain && currentChain !== expectedChain) {
-      // Wallet is on a different chain than selected — show mismatch
       const actualNet = Object.values(NETS).find(n=>n.numericId===currentChain);
-      const actualLabel = actualNet ? actualNet.label : `Chain ${currentChain}`;
       S.phrsBalance = native.toFixed(4)+' '+(actualNet?actualNet.ticker:net.ticker)+' ⚠️';
       S.usdcBalance = '— USDC (wrong network)';
-      showToast('⚠️',`Wallet on ${actualLabel}, UI set to ${net.label}`);
     } else {
-      // Wallet is on the expected chain
       S.phrsBalance = native.toFixed(4)+' '+net.ticker;
-      // USDC: simulate per-network balance (in production query ERC-20 balanceOf)
-      // Each network gets a deterministic-looking but different simulated balance
-      const seed = net.numericId ? (net.numericId % 1000) : 0;
-      const usdcSim = native > 0 ? (native * 1.0).toFixed(2) : (1200 + seed).toFixed(2);
-      S.usdcBalance = usdcSim + ' USDC';
+      // Try real USDC balance via eth_call
+      const usdcReal = await fetchUSDCBalance(S.wallet, currentChain, net.rpc);
+      S.usdcBalance = usdcReal !== null ? usdcReal : (native * 1.0).toFixed(2)+' USDC';
     }
-    renderBalances();
-    updateHdrBalance();
-  } catch(e){ S.phrsBalance = '— '+net.ticker; S.usdcBalance = '— USDC'; renderBalances(); updateHdrBalance(); }
+    renderBalances(); updateHdrBalance();
+  } catch(e){ S.phrsBalance='— '+net.ticker; S.usdcBalance='— USDC'; renderBalances(); updateHdrBalance(); }
 }
 function updateHdrBalance() {
   const wrap = document.getElementById('hdr-balance-wrap');
@@ -1181,7 +1237,46 @@ async function addPharosNetwork(provider, netId) {
   }
 }
 
-let selRole = 'employer';
+function saveSession(){
+  if(!S.wallet||!S.role) return;
+  localStorage.setItem('pharos_session', JSON.stringify({wallet:S.wallet,role:S.role,net:S.net,walletType:S.walletType}));
+}
+function clearSession(){ localStorage.removeItem('pharos_session'); }
+function loadSession(){ try{const r=localStorage.getItem('pharos_session');return r?JSON.parse(r):null;}catch{return null;} }
+
+async function tryRestoreSession(){
+  const sess = loadSession(); if(!sess||!sess.wallet) return false;
+  if(!window.ethereum) return false;
+  try {
+    const accounts = await window.ethereum.request({method:'eth_accounts'});
+    const match = accounts.find(a=>a.toLowerCase()===sess.wallet.toLowerCase());
+    if(!match) return false;
+    S.wallet=match; S.connected=true; S.role=sess.role; S.net=sess.net||'pharos-atlantic'; S.walletType=sess.walletType;
+    loadAllTx();
+    let prof = loadProf(S.wallet);
+    if(!prof){ prof=mkProf(S.wallet,S.role); saveProf(prof); }
+    document.getElementById('auth-overlay').classList.add('hidden');
+    document.getElementById('ppill').classList.remove('hidden');
+    updateHdrProfile(prof);
+    buildNav(S.role);
+    buildCategorySelects();
+    if(!getNFTHistory().length) saveNFTHistory(SEED_NFTS);
+    document.getElementById('landing-view').classList.add('hidden');
+    if(S.role==='employer') showView('employer','emp-send');
+    else showView('user','usr-send');
+    const btn=document.getElementById('wallet-btn');
+    btn.textContent=S.wallet.slice(0,6)+'…'+S.wallet.slice(-4); btn.classList.add('connected');
+    // sync net UI
+    const net=NETS[S.net]||NETS['pharos-atlantic'];
+    document.getElementById('net-lbl').textContent=net.label;
+    const d=document.getElementById('hdr-dot'); d.style.background=net.color; d.style.boxShadow=`0 0 8px ${net.color}`;
+    document.querySelectorAll('.net-option').forEach(o=>o.classList.remove('active'));
+    const matchEl=[...document.querySelectorAll('.net-option')].find(e=>e.getAttribute('data-netid')===S.net);
+    if(matchEl) matchEl.classList.add('active');
+    await fetchBalance(); updateHdrBalance(); renderBalances();
+    return true;
+  } catch(e){ return false; }
+}
 function selectRole(r){
   selRole=r;
   document.getElementById('rc-employer').classList.toggle('selected',r==='employer');
@@ -1205,6 +1300,7 @@ function confirmRole() {
   updateHdrProfile(prof);
   buildNav(selRole);
   buildCategorySelects();
+  loadAllTx();
   renderBalances();
   updateHdrBalance();
   // Seed NFT history if empty
@@ -1215,11 +1311,13 @@ function confirmRole() {
   // update wallet btn
   const btn = document.getElementById('wallet-btn');
   btn.textContent=S.wallet.slice(0,6)+'…'+S.wallet.slice(-4); btn.classList.add('connected');
+  saveSession();
   showToast('🎉',`Welcome to PharosPay, ${prof.username||S.wallet.slice(0,6)}!`);
 }
 
 function logout() {
   S.wallet=null; S.connected=false; S.role=null; S.walletType=null;
+  clearSession();
   document.getElementById('ppill').classList.add('hidden');
   document.getElementById('mode-nav').style.display='none';
   const btn=document.getElementById('wallet-btn'); btn.textContent='Connect Wallet'; btn.classList.remove('connected');
@@ -1362,11 +1460,11 @@ function showView(role, section){
   }
   [...EMP_S,...USR_S].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
   const t=document.getElementById(section); if(t) t.classList.remove('hidden');
-  if(section==='emp-txhist')   renderTx(eTxD,'e-tx-list');
-  if(section==='emp-payhist')  renderTx(ePayD,'e-pay-list');
-  if(section==='usr-txhist')   renderTx(uTxD,'u-tx-list');
-  if(section==='usr-rechist')  renderTx(uColD,'u-rec-list');
-  if(section==='usr-collect')  { renderTx(uColD,'u-col-list'); renderNFTHistory(); }
+  if(section==='emp-txhist')   { eTxD=loadTx('etx',SEED_eTxD);   renderTx(eTxD,'e-tx-list'); }
+  if(section==='emp-payhist')  { ePayD=loadTx('epay',SEED_ePayD); renderTx(ePayD,'e-pay-list'); }
+  if(section==='usr-txhist')   { uTxD=loadTx('utx',SEED_uTxD);   renderTx(uTxD,'u-tx-list'); }
+  if(section==='usr-rechist')  { uColD=loadTx('ucol',SEED_uColD); renderTx(uColD,'u-rec-list'); }
+  if(section==='usr-collect')  { uColD=loadTx('ucol',SEED_uColD); renderTx(uColD,'u-col-list'); renderNFTHistory(); }
   if(section==='usr-nft-history') renderNFTHistory();
   if(section==='emp-categories') { renderCategories('cat-grid-emp'); }
   if(section==='usr-categories') { renderCategories('cat-grid-usr'); }
@@ -1393,8 +1491,12 @@ function empSendConfirm(){
   const netLabel=(NETS[S.net]||NETS['pharos-atlantic']).label;
   if(!addr||!amt){showToast('⚠️','Fill in recipient and amount');return}
   openModal([{k:'From',v:S.wallet?S.wallet.slice(0,12)+'…':'Your Wallet'},{k:'To',v:addr.slice(0,14)+'…'},{k:'Amount',v:`${amt} ${tok}`,hl:true},{k:'Network',v:netLabel},{k:'Note',v:note||'—'},{k:'Gas',v:'~0.001 PHRS'}],()=>{
-    eTxD.unshift({id:'et'+Date.now(),type:'out',icon:'📤',label:`Sent to ${addr.slice(0,12)}…`,meta:'Just now · '+tok+' · '+netLabel,amount:`-${amt} ${tok}`,hash:'0x'+Math.random().toString(16).slice(2,14)});
-    showToast('✅',`Sent ${amt} ${tok} on ${netLabel}`);
+    const hash='0x'+Math.random().toString(16).slice(2,14);
+    const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const item={id:'et'+Date.now(),type:'out',icon:'📤',label:`Sent to ${addr.slice(0,12)}…`,meta:`${ts} · ${tok} · ${netLabel}`,amount:`-${amt} ${tok}`,hash};
+    eTxD = pushTx('etx', item);
+    if(document.getElementById('e-tx-list')&&!document.getElementById('e-tx-list').closest('.hidden')) renderTx(eTxD,'e-tx-list');
+    showTxNotif({title:`Sent ${amt} ${tok}`,sub:`To: ${addr.slice(0,14)}… · ${netLabel}`,hash,type:'success'});
     document.getElementById('e-s-addr').value=''; document.getElementById('e-s-amt').value='';
   },'📤 Sign & Send');
 }
@@ -1404,8 +1506,14 @@ function empPayConfirm(){
   if(!addr||!amt){showToast('⚠️','Fill in worker address and amount');return}
   const catObj=JOB_CATEGORIES.find(c=>c.id===cat);
   openModal([{k:'Type',v:'Payroll Disbursement'},{k:'Worker',v:addr.slice(0,14)+'…'},{k:'Amount',v:`$${Number(amt).toLocaleString()} USDC`,hl:true},{k:'Period',v:period},{k:'Category',v:catObj?catObj.name:'—'},{k:'Network',v:netLabel},{k:'Note',v:desc||'—'},{k:'Gas',v:'~0.001 PHRS'}],()=>{
-    ePayD.unshift({id:'ep'+Date.now(),type:'pay',icon:'💸',label:`Salary → ${addr.slice(0,12)}…`,meta:'Just now · '+period+' · USDC',amount:`-$${Number(amt).toLocaleString()} USDC`,hash:'0x'+Math.random().toString(16).slice(2,14)});
-    showToast('✅',`$${Number(amt).toLocaleString()} USDC paid on ${netLabel}`);
+    const hash='0x'+Math.random().toString(16).slice(2,14);
+    const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const item={id:'ep'+Date.now(),type:'pay',icon:'💸',label:`Salary → ${addr.slice(0,12)}…`,meta:`${ts} · ${period} · USDC`,amount:`-$${Number(amt).toLocaleString()} USDC`,hash};
+    ePayD = pushTx('epay', item);
+    eTxD  = pushTx('etx', {...item, id:'et'+Date.now(), label:`Payroll → ${addr.slice(0,12)}…`});
+    if(document.getElementById('e-pay-list')&&!document.getElementById('e-pay-list').closest('.hidden')) renderTx(ePayD,'e-pay-list');
+    if(document.getElementById('e-tx-list')&&!document.getElementById('e-tx-list').closest('.hidden'))  renderTx(eTxD,'e-tx-list');
+    showTxNotif({title:`Payroll Sent · $${Number(amt).toLocaleString()} USDC`,sub:`Worker: ${addr.slice(0,14)}… · ${period}`,hash,type:'success'});
     document.getElementById('e-p-addr').value=''; document.getElementById('e-p-amt').value='';
   },'💸 Confirm Payroll');
 }
@@ -1439,8 +1547,12 @@ function usrSendConfirm(){
   const netLabel=(NETS[S.net]||NETS['pharos-atlantic']).label;
   if(!addr||!amt){showToast('⚠️','Fill in recipient and amount');return}
   openModal([{k:'From',v:S.wallet?S.wallet.slice(0,12)+'…':'Your Wallet'},{k:'To',v:addr.slice(0,14)+'…'},{k:'Amount',v:`${amt} ${tok}`,hl:true},{k:'Network',v:netLabel},{k:'Note',v:note||'—'},{k:'Gas',v:'~0.001 PHRS'}],()=>{
-    uTxD.unshift({id:'ut'+Date.now(),type:'out',icon:'📤',label:`Sent to ${addr.slice(0,12)}…`,meta:'Just now · '+tok+' · '+netLabel,amount:`-${amt} ${tok}`,hash:'0x'+Math.random().toString(16).slice(2,14)});
-    showToast('✅',`Sent ${amt} ${tok} on ${netLabel}`);
+    const hash='0x'+Math.random().toString(16).slice(2,14);
+    const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const item={id:'ut'+Date.now(),type:'out',icon:'📤',label:`Sent to ${addr.slice(0,12)}…`,meta:`${ts} · ${tok} · ${netLabel}`,amount:`-${amt} ${tok}`,hash};
+    uTxD = pushTx('utx', item);
+    if(document.getElementById('u-tx-list')&&!document.getElementById('u-tx-list').closest('.hidden')) renderTx(uTxD,'u-tx-list');
+    showTxNotif({title:`Sent ${amt} ${tok}`,sub:`To: ${addr.slice(0,14)}… · ${netLabel}`,hash,type:'success'});
     document.getElementById('u-s-addr').value=''; document.getElementById('u-s-amt').value='';
   },'📤 Sign & Send');
 }
@@ -1490,6 +1602,7 @@ function mintNFT(){
     advStep(2);
     addNFTRecord(currentNFTData);
     renderNFTHistory();
+    showTxNotif({title:`NFT #${nftN} Minted`,sub:`Invoice NFT on ${netLabel}`,hash,type:'info'});
     showToast('🎉',`Invoice NFT #${nftN} minted on ${netLabel}!`);
   },1800);
 }
@@ -1505,9 +1618,13 @@ function sendNFT(){
       if(idx>=0) arr[idx]=currentNFTData; else arr.unshift(currentNFTData);
       saveNFTHistory(arr);
     }
-    uColD.unshift({id:'uc'+Date.now(),type:'nft',icon:'🎁',label:`Salary collected · NFT #${nftN} Sent`,meta:'Just now · Sent to '+addr.slice(0,10)+'…',amount:currentNFTData?'+'+currentNFTData.amount:'+USDC',hash:(currentNFTData||{}).hash||'0x'+Math.random().toString(16).slice(2,14)});
+    const hash=(currentNFTData||{}).hash||'0x'+Math.random().toString(16).slice(2,14);
+    const ts=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const colItem={id:'uc'+Date.now(),type:'nft',icon:'🎁',label:`NFT #${nftN} sent to employer`,meta:`${ts} · Sent to ${addr.slice(0,10)}…`,amount:currentNFTData?'+'+currentNFTData.amount:'+USDC',hash};
+    uColD = pushTx('ucol', colItem);
+    if(document.getElementById('u-col-list')&&!document.getElementById('u-col-list').closest('.hidden')) renderTx(uColD,'u-col-list');
     advStep(3); renderNFTHistory();
-    showToast('📨',`Invoice NFT #${nftN} sent on ${netLabel}!`);
+    showTxNotif({title:`Invoice NFT #${nftN} Sent`,sub:`To: ${addr.slice(0,14)}… · ${netLabel}`,hash,type:'success'});
   },'📨 Confirm NFT Send');
 }
 function advStep(done){
@@ -1531,6 +1648,35 @@ function showToast(icon,msg){
   const el=document.getElementById('toast'); document.getElementById('toast-msg').textContent=msg;
   el.querySelector('.ti').textContent=icon; el.classList.add('show');
   clearTimeout(tT); tT=setTimeout(()=>el.classList.remove('show'),4200);
+}
+
+/* ── Top-right TX notification ── */
+function showTxNotif({title, sub, hash, type='success', duration=5000}){
+  const stack = document.getElementById('tx-notif-stack');
+  const id = 'txn-'+Date.now();
+  const typeIcons = {success:'✅',error:'❌',info:'💡',warning:'⚠️'};
+  const ico = typeIcons[type]||'✅';
+  const div = document.createElement('div');
+  div.className = 'tx-notif '+type;
+  div.id = id;
+  div.innerHTML = `
+    <div class="tx-notif-ico">${ico}</div>
+    <div class="tx-notif-body">
+      <div class="tx-notif-title">${title}</div>
+      ${sub?`<div class="tx-notif-sub">${sub}</div>`:''}
+      ${hash?`<span class="tx-notif-hash" onclick="openExp('${hash}')">${hash.slice(0,18)}… ↗</span>`:''}
+    </div>
+    <div class="tx-notif-close" onclick="dismissTxNotif('${id}')">✕</div>
+    <div class="tx-notif-bar" style="animation-duration:${duration}ms"></div>
+  `;
+  stack.appendChild(div);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>div.classList.add('show')));
+  setTimeout(()=>dismissTxNotif(id), duration);
+}
+function dismissTxNotif(id){
+  const el=document.getElementById(id); if(!el) return;
+  el.classList.add('hide');
+  setTimeout(()=>el.remove(), 400);
 }
 
 /* ═══════════════════════════ NETWORK ════════════════════════ */
@@ -1598,6 +1744,9 @@ document.addEventListener('click',e=>{
 });
 
 /* ═══════════════════════════ WALLET EVENTS ══════════════════ */
+// Attempt to restore previous session on load
+tryRestoreSession();
+
 if(window.ethereum){
   window.ethereum.on('accountsChanged',a=>{
     if(a.length){S.wallet=a[0];S.connected=true;updWalletDisplays();fetchBalance();showToast('🔄','Account changed to '+a[0].slice(0,6)+'…');}
